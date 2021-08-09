@@ -1,0 +1,75 @@
+---
+title: "stl_lead_inequity"
+author: "Joe DeCesaro"
+date: "8/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(skimr)
+library(janitor)
+library(here)
+```
+
+## Read in & explore the data
+```{r}
+stl_lead <- read_delim(here::here("data", "data_raw", "stl_blood_lead.csv"), delim = ";")
+
+stl_lead
+
+skim(stl_lead)
+
+names(stl_lead)
+
+dim(stl_lead)
+
+stl_lead <- stl_lead %>% 
+  clean_names()
+  
+
+```
+
+```{r}
+stl_lead_prop <- stl_lead %>% 
+  mutate(prop_white = (white / total_pop) *100) %>%
+  mutate(pct_elevated = str_replace(pct_elevated, 
+                                    pattern = ",", 
+                                    replacement = ".")) %>% 
+  mutate(pct_elevated = as.numeric(pct_elevated))
+
+# the above is making the pct_elevated column to have periods replacing the commas in the column from the stl_lead data. Then the data is changed from a character to a numeric value.
+```
+
+## Create a scatterplot
+```{r, fig.dim= c(10,4)}
+stl_lead_plot <- ggplot(data = stl_lead_prop, aes(x = pct_elevated, y = prop_white)) +
+  geom_point(aes(size = pct_elevated),
+             color = "purple",
+             alpha = 0.8) + 
+  theme_classic() +
+  labs(x = "Proportion of White Population", y = "Percentage with Elevated Lead Levels")
+
+stl_lead_plot
+```
+The scatterplot above shows that there is increased risk of elevated lead levels in populations with lower proportions of white residents. 
+
+```{r}
+ggsave(here::here("figs", "stl_lead_plot.png"), plot = stl_lead_plot, width = 6, height = 5)
+```
+
+## Create a historgram of pct_elevated
+```{r, fig.dim= c(14,3)}
+pct_elevated_hist <- ggplot(data = stl_lead_prop, aes(x = pct_elevated)) +
+  geom_histogram(binwidth = 5, 
+                 color = "purple",
+                 fill = "yellow")
+
+pct_elevated_hist
+```
+
+```{r}
+ggsave(here::here("figs", "stl_elevated_hist.jpg"), width = 10, height = 4)
+```
+
